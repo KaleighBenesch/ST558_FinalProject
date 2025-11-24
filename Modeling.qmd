@@ -1,0 +1,9 @@
+---
+title: "Modeling"
+format: html
+editor: visual
+---
+
+## ST 558: Final Project - Creating a Vignette
+### Modeling
+

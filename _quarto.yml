@@ -1,0 +1,38 @@
+project:
+  type: website
+  output-dir: docs
+  render: 
+    - index.qmd
+    - pages/EDA.qmd
+    - pages/Modeling.qmd
+    
+website:
+  title: "Final Project Site"
+  navbar:
+    background: primary
+    left:
+      - href: index.qmd
+        text: Home
+  sidebar:
+    style: "docked"
+    search: true
+    collapse-level: 1
+    contents:
+      - index.qmd
+      - pages/EDA.qmd
+      - pages/Modeling.qmd
+  page-navigation: true
+  reader-mode: true
+
+format:
+  html:
+    theme: cosmo
+    css: styles.css
+    toc: true
+    grid:
+      sidebar-width: 300px
+
+callout-appearance: simple
+
+date: today
+date-format: iso

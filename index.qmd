@@ -1,0 +1,9 @@
+---
+title: "ST 558 - Final Project"
+format: html
+toc: TRUE
+editor_options: 
+  chunk_output_type: inline
+---
+
+In this project, we will create a vignette about selecting a predictive model. We will make that model available as an API and save that in a docker image that other users can run and access! 
