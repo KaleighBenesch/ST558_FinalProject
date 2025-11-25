@@ -102,15 +102,6 @@ table("Phys Activity" = diabetes_data$phys_activity, "Diabetes Status" = diabete
 
 
 
-
-
-
-
-
-
-
-
-
 [Click here for the Modeling Page](Modeling.html)
 
 

@@ -4,6 +4,109 @@ format: html
 editor: visual
 ---
 
+```{r}
+#| warning: FALSE
+library(tidyverse)
+library(tidymodels)
+library(parsnip)
+library(workflows)
+library(broom)
+```
+
+
 ## ST 558: Final Project - Creating a Vignette
 ### Modeling
+
+In this section, we will create predictive models for our response variable, `diabetes_binary`, by using a subset of predictors as shown in our EDA. Our goal is to select the model that can best predict an individual's diabetes status based on predictors such as `high_bp`, `phys_activity`, `age`, `income`, etc. 
+
+We will use the `tidymodels` library to fit and evaluate a classification tree and a random forest, then use log-loss as our metric to evaluate these models. For both model types, we will use log-loss with 5 fold cross-validation to select the best model from that family of models.
+
+Let's begin by splitting our `diabetes_data` into a training set (70% of the data) and a test set (30% of the data). We will stratify by `diabetes_binary` to help with the imbalance in our data. This will make sure that the proportion of 0s and 1s in the training and testing sets  matches the overall data set. As mentioned in our EDA, there are many more observations in our data where individuals do not have diabetes than those who do.
+```{r Splitting}
+set.seed(75)
+
+diabetes_split <- initial_split(diabetes_data, prop = 0.7, strata = diabetes_binary)
+diabetes_train <- training(diabetes_split)
+diabetes_test <- testing(diabetes_split)
+```
+
+#### Classification Tree
+Then you should fit a classification tree with varying values for the complexity parameter and choose the best model (based on 5 fold CV on the training set). Include at least 5 predictors in this model.
+
+A classification tree is a model that predicts a categorical outcome (diabetes status in this case) by splitting the data into groups based on the values of the predictors. Each group is then assigned the most common class among the observations in that group, which can make it easier to see how different variables influence the predictions.
+
+We will fit a classification tree using 5-fold cross-validation and tune the complexity parameter to select the best model.
+```{r}
+cv_folds <- vfold_cv(diabetes_train, v = 5)
+```
+
+Now, that we have our CV fold, let's create a recipe with 5 predictors for our classification tree model and define model specifications.
+```{r tree recipe and spec}
+tree_recipe <- recipe(diabetes_binary ~ high_bp + phys_activity + age + income + education, data = diabetes_train) |> 
+  step_dummy(all_nominal_predictors())
+
+tree_mod <- decision_tree(tree_depth = tune(),
+                          min_n = 10,
+                          cost_complexity = tune()) |>
+  set_engine("rpart") |>
+  set_mode("classification")
+```
+
+Next, we will create our workflow.
+```{r Tree wkf}
+tree_wkf <- workflow() |>
+  add_recipe(tree_recipe) |>
+  add_model(tree_mod)
+tree_wkf
+```
+
+Then, we will fit the workflow to our CV folds.
+```{r Tree fit wkf to folds}
+set.seed(75)
+
+tree_grid <- grid_regular(cost_complexity(),
+                          tree_depth(),
+                          levels = c(5, 5))
+
+tree_fits <- tree_wkf |> 
+  tune_grid(resamples = cv_folds,
+            grid = tree_grid,
+            metrics = metric_set(mn_log_loss))
+tree_fits
+```
+
+Now that the model has been tuned, we can collect metrics to see how the models performed.
+```{r Tree metrics}
+tree_fits |>
+  collect_metrics() |>
+  filter(.metric == "mn_log_loss") |>
+  arrange(mean)
+
+best_tree <- tree_fits |> 
+  select_best(metric = "mn_log_loss")
+best_tree
+```
+
+Finally, we will finalize our workflow and fit it to the entire training data set.
+```{r Tree finalize & fit}
+tree_final <- tree_wkf |>
+  finalize_workflow(best_tree) |>
+  last_fit(diabetes_split, metrics = metric_set(mn_log_loss))
+
+tree_final |>
+  collect_metrics()
+```
+
+#### Random Forest
+You should provide a thorough explanation of what a random forest is and why we might use it (be sure to relate this to a basic classification tree). You should then fit a random forest model with varying values for the mtry parameter and choose the best model (based on 5 fold CV on the training set). Include at least 5
+predictors in this model.
+
+
+
+
+#### Final Model Selection
+You should now have two best models (one for each model type above). Compare both models on the test set and declare an overall winner!
+
+
+
 
