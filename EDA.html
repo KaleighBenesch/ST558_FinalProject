@@ -20,6 +20,40 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -62,11 +96,227 @@ ul.task-list li input[type="checkbox"] {
 </header>
 
 
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readr)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(janitor)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
 <section id="st-558-final-project---creating-a-vignette" class="level2">
 <h2 class="anchored" data-anchor-id="st-558-final-project---creating-a-vignette">ST 558: Final Project - Creating a Vignette</h2>
 <section id="eda" class="level3">
 <h3 class="anchored" data-anchor-id="eda">EDA</h3>
+<section id="about-the-data" class="level4">
+<h4 class="anchored" data-anchor-id="about-the-data">About the Data</h4>
+<p>The dataset we will be using throughout this project is the “diabetes _ binary _ health _ indicators _ BRFSS2015.csv” dataset, which is a cleaned dataset of 253,680 survey responses to the CDC’s Behavioral Risk Factor Surveillance System (BRFSS2015) for the year of 2015. The survey collects responses from many Americans on health-related risk behaviors, chronic health conditions, and the use of preventative services. The target variable <code>Diabetes_binary</code> has 2 classes: 0 for no diabetes and 1 for diabetes/prediabetes. This dataset has 21 feature variables and is not balanced. The main predictor variables that we will be considering today are high blood pressure, physical activity, age, and income.</p>
+<p>We will begin by using a relative path to import the data set. Then, we will observe the current structure of the data and check for any missing values.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>diabetes_data <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"diabetes_binary_health_indicators_BRFSS2015.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Rows: 253680 Columns: 22
+── Column specification ────────────────────────────────────────────────────────
+Delimiter: ","
+dbl (22): Diabetes_binary, HighBP, HighChol, CholCheck, BMI, Smoker, Stroke,...
+
+ℹ Use `spec()` to retrieve the full column specification for this data.
+ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(diabetes_data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6 × 22
+  Diabetes_binary HighBP HighChol CholCheck   BMI Smoker Stroke
+            &lt;dbl&gt;  &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;
+1               0      1        1         1    40      1      0
+2               0      0        0         0    25      1      0
+3               0      1        1         1    28      0      0
+4               0      1        0         1    27      0      0
+5               0      1        1         1    24      0      0
+6               0      1        1         1    25      1      0
+# ℹ 15 more variables: HeartDiseaseorAttack &lt;dbl&gt;, PhysActivity &lt;dbl&gt;,
+#   Fruits &lt;dbl&gt;, Veggies &lt;dbl&gt;, HvyAlcoholConsump &lt;dbl&gt;, AnyHealthcare &lt;dbl&gt;,
+#   NoDocbcCost &lt;dbl&gt;, GenHlth &lt;dbl&gt;, MentHlth &lt;dbl&gt;, PhysHlth &lt;dbl&gt;,
+#   DiffWalk &lt;dbl&gt;, Sex &lt;dbl&gt;, Age &lt;dbl&gt;, Education &lt;dbl&gt;, Income &lt;dbl&gt;</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Check structure of data</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="fu">str</span>(diabetes_data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>spc_tbl_ [253,680 × 22] (S3: spec_tbl_df/tbl_df/tbl/data.frame)
+ $ Diabetes_binary     : num [1:253680] 0 0 0 0 0 0 0 0 1 0 ...
+ $ HighBP              : num [1:253680] 1 0 1 1 1 1 1 1 1 0 ...
+ $ HighChol            : num [1:253680] 1 0 1 0 1 1 0 1 1 0 ...
+ $ CholCheck           : num [1:253680] 1 0 1 1 1 1 1 1 1 1 ...
+ $ BMI                 : num [1:253680] 40 25 28 27 24 25 30 25 30 24 ...
+ $ Smoker              : num [1:253680] 1 1 0 0 0 1 1 1 1 0 ...
+ $ Stroke              : num [1:253680] 0 0 0 0 0 0 0 0 0 0 ...
+ $ HeartDiseaseorAttack: num [1:253680] 0 0 0 0 0 0 0 0 1 0 ...
+ $ PhysActivity        : num [1:253680] 0 1 0 1 1 1 0 1 0 0 ...
+ $ Fruits              : num [1:253680] 0 0 1 1 1 1 0 0 1 0 ...
+ $ Veggies             : num [1:253680] 1 0 0 1 1 1 0 1 1 1 ...
+ $ HvyAlcoholConsump   : num [1:253680] 0 0 0 0 0 0 0 0 0 0 ...
+ $ AnyHealthcare       : num [1:253680] 1 0 1 1 1 1 1 1 1 1 ...
+ $ NoDocbcCost         : num [1:253680] 0 1 1 0 0 0 0 0 0 0 ...
+ $ GenHlth             : num [1:253680] 5 3 5 2 2 2 3 3 5 2 ...
+ $ MentHlth            : num [1:253680] 18 0 30 0 3 0 0 0 30 0 ...
+ $ PhysHlth            : num [1:253680] 15 0 30 0 0 2 14 0 30 0 ...
+ $ DiffWalk            : num [1:253680] 1 0 1 0 0 0 0 1 1 0 ...
+ $ Sex                 : num [1:253680] 0 0 0 0 0 1 0 0 0 1 ...
+ $ Age                 : num [1:253680] 9 7 9 11 11 10 9 11 9 8 ...
+ $ Education           : num [1:253680] 4 6 4 3 5 6 6 4 5 4 ...
+ $ Income              : num [1:253680] 3 1 8 6 4 8 7 4 1 3 ...
+ - attr(*, "spec")=
+  .. cols(
+  ..   Diabetes_binary = col_double(),
+  ..   HighBP = col_double(),
+  ..   HighChol = col_double(),
+  ..   CholCheck = col_double(),
+  ..   BMI = col_double(),
+  ..   Smoker = col_double(),
+  ..   Stroke = col_double(),
+  ..   HeartDiseaseorAttack = col_double(),
+  ..   PhysActivity = col_double(),
+  ..   Fruits = col_double(),
+  ..   Veggies = col_double(),
+  ..   HvyAlcoholConsump = col_double(),
+  ..   AnyHealthcare = col_double(),
+  ..   NoDocbcCost = col_double(),
+  ..   GenHlth = col_double(),
+  ..   MentHlth = col_double(),
+  ..   PhysHlth = col_double(),
+  ..   DiffWalk = col_double(),
+  ..   Sex = col_double(),
+  ..   Age = col_double(),
+  ..   Education = col_double(),
+  ..   Income = col_double()
+  .. )
+ - attr(*, "problems")=&lt;externalptr&gt; </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Check for missing values</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="fu">colSums</span>(<span class="fu">is.na</span>(diabetes_data)) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>     Diabetes_binary               HighBP             HighChol 
+                   0                    0                    0 
+           CholCheck                  BMI               Smoker 
+                   0                    0                    0 
+              Stroke HeartDiseaseorAttack         PhysActivity 
+                   0                    0                    0 
+              Fruits              Veggies    HvyAlcoholConsump 
+                   0                    0                    0 
+       AnyHealthcare          NoDocbcCost              GenHlth 
+                   0                    0                    0 
+            MentHlth             PhysHlth             DiffWalk 
+                   0                    0                    0 
+                 Sex                  Age            Education 
+                   0                    0                    0 
+              Income 
+                   0 </code></pre>
+</div>
+</div>
+<p>Since this data has already been cleaned, there are no missing values present. However, by looking at the structure of our variables, we see that we will need to convert the majority of them to factors. We will leave <code>BMI</code>, <code>MentHlth</code>, and <code>PhysHlth</code> as numeric.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>diabetes_data <span class="ot">&lt;-</span> diabetes_data <span class="sc">|&gt;</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">Diabetes_binary =</span> <span class="fu">as.factor</span>(Diabetes_binary),</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">HighBP =</span> <span class="fu">as.factor</span>(HighBP),</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">HighChol =</span> <span class="fu">as.factor</span>(HighChol),</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>         <span class="at">CholCheck =</span> <span class="fu">as.factor</span>(CholCheck),</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>         <span class="at">Smoker =</span> <span class="fu">as.factor</span>(Smoker),</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>         <span class="at">Stroke =</span> <span class="fu">as.factor</span>(Stroke),</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>         <span class="at">HeartDiseaseorAttack =</span> <span class="fu">as.factor</span>(HeartDiseaseorAttack),</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>         <span class="at">PhysActivity =</span> <span class="fu">as.factor</span>(PhysActivity),</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>         <span class="at">Fruits =</span> <span class="fu">as.factor</span>(Fruits),</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>         <span class="at">Veggies =</span> <span class="fu">as.factor</span>(Veggies),</span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>         <span class="at">HvyAlcoholConsump =</span> <span class="fu">as.factor</span>(HvyAlcoholConsump),</span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>         <span class="at">AnyHealthcare =</span> <span class="fu">as.factor</span>(AnyHealthcare),</span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>         <span class="at">NoDocbcCost =</span> <span class="fu">as.factor</span>(NoDocbcCost),</span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>         <span class="at">GenHlth =</span> <span class="fu">as.factor</span>(GenHlth),</span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>         <span class="at">DiffWalk =</span> <span class="fu">as.factor</span>(DiffWalk),</span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>         <span class="at">Sex =</span> <span class="fu">as.factor</span>(Sex),</span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>         <span class="at">Age =</span> <span class="fu">as.factor</span>(Age),</span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>         <span class="at">Education =</span> <span class="fu">as.factor</span>(Education),</span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>         <span class="at">Income =</span> <span class="fu">as.factor</span>(Income))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>For the last step of preparation, we will rename all the variables to have more user-friendly names.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>diabetes_data <span class="ot">&lt;-</span> diabetes_data <span class="sc">|&gt;</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">clean_names</span>() <span class="co"># Replaces all spaces with '_' and makes all letters lowercase.</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(diabetes_data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> [1] "diabetes_binary"        "high_bp"                "high_chol"             
+ [4] "chol_check"             "bmi"                    "smoker"                
+ [7] "stroke"                 "heart_diseaseor_attack" "phys_activity"         
+[10] "fruits"                 "veggies"                "hvy_alcohol_consump"   
+[13] "any_healthcare"         "no_docbc_cost"          "gen_hlth"              
+[16] "ment_hlth"              "phys_hlth"              "diff_walk"             
+[19] "sex"                    "age"                    "education"             
+[22] "income"                </code></pre>
+</div>
+</div>
+</section>
+<section id="summarizations" class="level4">
+<h4 class="anchored" data-anchor-id="summarizations">Summarizations</h4>
+<p>In this section, we will explore the diabetes dataset by creating several summarizations to better understand the distribution of some important health indicators and how they relate to the response variable, <code>diabetes_binary</code>. The main predictors we will be focusing on are <code>high_bp</code>, <code>phys_activity</code>, <code>age</code>, and <code>income</code>. As mentioned in the beginning, this dataset is not balanced. But how do we know that? Below we will break down the responses of diabetic and non-diabetic individuals.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(diabetes_data<span class="sc">$</span>diabetes_binary)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+     0      1 
+218334  35346 </code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(diabetes_data, <span class="fu">aes</span>(<span class="at">x =</span> diabetes_binary)) <span class="sc">+</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_bar</span>(<span class="at">fill =</span> <span class="st">"orange"</span>) <span class="sc">+</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Distribution of Diabetes Status"</span>,</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"Diabetes/Prediabetes (0 = No, 1 = Yes)"</span>,</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="st">"Count"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="EDA_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>We can see that there are many more observations that reflect individuals who do not have diabetes than those who do. This imbalance may affect how a model performs on the data, but we will discuss that later on.</p>
+<p>Let’s see how high blood pressure status compares to diabetic status. Below, we can see that individuals with high blood pressure show a much higher proportion of having diabetes than those with out high blood pressure. This can give a good indication that the <code>high_bp</code> variable will play a key role in predicting diabetic status.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(<span class="st">"High BP"</span> <span class="ot">=</span> diabetes_data<span class="sc">$</span>high_bp, <span class="st">"Diabetes Status"</span> <span class="ot">=</span> diabetes_data<span class="sc">$</span>diabetes_binary)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>       Diabetes Status
+High BP      0      1
+      0 136109   8742
+      1  82225  26604</code></pre>
+</div>
+</div>
+<p>Let’s check out a bar plot comparing age groups by diabetes status. We see a similar trend between these two variables. In this dataset, most non-diabetic individuals fall within age groups 6–11 (ages 45–74), and most diabetic individuals fall within age groups 8–11 (ages 55–74), suggesting that diabetes becomes more common in the later middle-aged to early seniors. The plot clearly shows an upward trend in diabetes risk with age, especially staring around age group 8 (55-59 years).</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(diabetes_data, </span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>       <span class="fu">aes</span>(<span class="at">x =</span> age, <span class="at">fill =</span> diabetes_binary)) <span class="sc">+</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_bar</span>(<span class="at">position =</span> <span class="st">"dodge"</span>) <span class="sc">+</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Counts of Age Levels by Diabetes Status"</span>,</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"Age Category"</span>,</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="st">"Count"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="EDA_files/figure-html/Age%20plot-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Finally, let’s look into an individuals physical activity vs diabetic status. The contingency table below shows that individuals who did not engage in physical activity in past 30 days (not including job) have a higher proportion of diabetes compared to those who are active. We can see that there is a much larger difference between the number of individuals with and without diabetes when looking at those who are active..</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(<span class="st">"Phys Activity"</span> <span class="ot">=</span> diabetes_data<span class="sc">$</span>phys_activity, <span class="st">"Diabetes Status"</span> <span class="ot">=</span> diabetes_data<span class="sc">$</span>diabetes_binary)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>             Diabetes Status
+Phys Activity      0      1
+            0  48701  13059
+            1 169633  22287</code></pre>
+</div>
+</div>
 <p><a href="Modeling.html">Click here for the Modeling Page</a></p>
+</section>
 </section>
 </section>
 

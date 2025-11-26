@@ -11,6 +11,37 @@ library(tidymodels)
 library(parsnip)
 library(workflows)
 library(broom)
+library(readr)
+library(janitor)
+```
+
+```{r}
+diabetes_data <- read_csv("diabetes_binary_health_indicators_BRFSS2015.csv")
+
+# Factor Conversion
+diabetes_data <- diabetes_data |>
+  mutate(Diabetes_binary = as.factor(Diabetes_binary),
+         HighBP = as.factor(HighBP),
+         HighChol = as.factor(HighChol),
+         CholCheck = as.factor(CholCheck),
+         Smoker = as.factor(Smoker),
+         Stroke = as.factor(Stroke),
+         HeartDiseaseorAttack = as.factor(HeartDiseaseorAttack),
+         PhysActivity = as.factor(PhysActivity),
+         Fruits = as.factor(Fruits),
+         Veggies = as.factor(Veggies),
+         HvyAlcoholConsump = as.factor(HvyAlcoholConsump),
+         AnyHealthcare = as.factor(AnyHealthcare),
+         NoDocbcCost = as.factor(NoDocbcCost),
+         GenHlth = as.factor(GenHlth),
+         DiffWalk = as.factor(DiffWalk),
+         Sex = as.factor(Sex),
+         Age = as.factor(Age),
+         Education = as.factor(Education),
+         Income = as.factor(Income))
+
+diabetes_data <- diabetes_data |>
+  clean_names() # Replaces all spaces with '_' and makes all letters lowercase.
 ```
 
 
@@ -31,7 +62,6 @@ diabetes_test <- testing(diabetes_split)
 ```
 
 #### Classification Tree
-Then you should fit a classification tree with varying values for the complexity parameter and choose the best model (based on 5 fold CV on the training set). Include at least 5 predictors in this model.
 
 A classification tree is a model that predicts a categorical outcome (diabetes status in this case) by splitting the data into groups based on the values of the predictors. Each group is then assigned the most common class among the observations in that group, which can make it easier to see how different variables influence the predictions.
 
@@ -98,15 +128,75 @@ tree_final |>
 ```
 
 #### Random Forest
-You should provide a thorough explanation of what a random forest is and why we might use it (be sure to relate this to a basic classification tree). You should then fit a random forest model with varying values for the mtry parameter and choose the best model (based on 5 fold CV on the training set). Include at least 5
-predictors in this model.
 
+A random forest model combines multiple classification trees to make predictions. This is a type of ensemble tree and can help improve prediction accuracy. Now, we will repeat the steps above in a similar way to create a random forest model.
 
+Let's create a recipe with 5 predictors for our random forest model and define model specifications.
+```{r RF recipe and spec}
+rf_recipe <- recipe(diabetes_binary ~ high_bp + phys_activity + age + income + education, data = diabetes_train) |> 
+  step_dummy(all_nominal_predictors())
 
+rf_mod <- rand_forest(mtry = tune(),
+                      trees = 200,
+                      min_n = 10) |>
+  set_engine("ranger", importance = "impurity") |> # Level for importance
+  set_mode("classification")
+
+# Workflow
+rf_wkf <- workflow() |>
+  add_recipe(rf_recipe) |>
+  add_model(rf_mod)
+rf_wkf
+```
+
+Next, we will move on to fitting the workflow to our CV folds and checking our metrics across the folds.
+```{r RF fit to folds & check metrics}
+set.seed(75)
+
+rf_fit <- rf_wkf |>
+  tune_grid(resamples = cv_folds,
+            grid = 5,
+            metrics = metric_set(mn_log_loss))
+
+# Collect metrics
+rf_fit |>
+  collect_metrics() |>
+  filter(.metric == "mn_log_loss") |>
+  arrange(mean)
+
+# Check metric performance
+best_rf <- rf_fit |> 
+  select_best(metric = "mn_log_loss")
+best_rf
+```
+
+Finally, we will finalize our workflow and fit it to the entire training data set.
+```{r RF finalize & fit}
+rf_final <- rf_wkf |>
+  finalize_workflow(best_rf) |>
+  last_fit(diabetes_split, metrics = metric_set(mn_log_loss))
+
+rf_final |>
+  collect_metrics()
+```
 
 #### Final Model Selection
-You should now have two best models (one for each model type above). Compare both models on the test set and declare an overall winner!
 
+In this last section, we will compare the best models from our classification tree and random forest on the test set using log-loss. Below, we can see that both models perform very similar, but the classification tree model does slightly better.
+```{r}
+all_metrics <- rbind(
+  tree_final |>
+    collect_metrics() |>
+    mutate(Model = "CLASSIFICATION_TREE", .before = ".metric"),
+  rf_final |>
+    collect_metrics() |>
+    mutate(Model = "RANDOM_FOREST", .before = ".metric")
+)
+
+all_metrics |>
+  filter(.metric == "mn_log_loss") |> 
+  arrange(.estimate)
+```
 
 
 
