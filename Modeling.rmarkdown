@@ -1,0 +1,275 @@
+---
+title: "Modeling"
+format: html
+editor: visual
+---
+
+```{r}
+#| warning: FALSE
+library(tidyverse)
+library(tidymodels)
+library(parsnip)
+library(workflows)
+library(broom)
+library(readr)
+library(janitor)
+```
+
+```{r}
+diabetes_data <- read_csv("diabetes_binary_health_indicators_BRFSS2015.csv")
+
+# Factor Conversion
+diabetes_data <- diabetes_data |>
+  mutate(Diabetes_binary = as.factor(Diabetes_binary),
+         HighBP = as.factor(HighBP),
+         HighChol = as.factor(HighChol),
+         CholCheck = as.factor(CholCheck),
+         Smoker = as.factor(Smoker),
+         Stroke = as.factor(Stroke),
+         HeartDiseaseorAttack = as.factor(HeartDiseaseorAttack),
+         PhysActivity = as.factor(PhysActivity),
+         Fruits = as.factor(Fruits),
+         Veggies = as.factor(Veggies),
+         HvyAlcoholConsump = as.factor(HvyAlcoholConsump),
+         AnyHealthcare = as.factor(AnyHealthcare),
+         NoDocbcCost = as.factor(NoDocbcCost),
+         GenHlth = as.factor(GenHlth),
+         DiffWalk = as.factor(DiffWalk),
+         Sex = as.factor(Sex),
+         Age = as.factor(Age),
+         Education = as.factor(Education),
+         Income = as.factor(Income))
+
+diabetes_data <- diabetes_data |>
+  clean_names() # Replaces all spaces with '_' and makes all letters lowercase.
+```
+
+
+
+
+
+## ST 558: Final Project - Creating a Vignette
+### Modeling
+
+In this section, we will create predictive models for our response variable, `diabetes_binary`, by using a subset of predictors as shown in our EDA. Our goal is to select the model that can best predict an individual's diabetes status based on predictors such as `high_bp`, `phys_activity`, `age`, `income`, etc. 
+
+We will use the `tidymodels` library to fit and evaluate a classification tree and a random forest, then use log-loss as our metric to evaluate these models. For both model types, we will use log-loss with 5 fold cross-validation to select the best model from that family of models.
+
+Let's begin by splitting our `diabetes_data` into a training set (70% of the data) and a test set (30% of the data). We will stratify by `diabetes_binary` to help with the imbalance in our data. This will make sure that the proportion of 0s and 1s in the training and testing sets  matches the overall data set. As mentioned in our EDA, there are many more observations in our data where individuals do not have diabetes than those who do.
+
+
+
+```{r Splitting}
+set.seed(75)
+
+diabetes_split <- initial_split(diabetes_data, prop = 0.7, strata = diabetes_binary)
+diabetes_train <- training(diabetes_split)
+diabetes_test <- testing(diabetes_split)
+```
+
+
+
+
+#### Classification Tree
+
+A classification tree is a model that predicts a categorical outcome (diabetes status in this case) by splitting the data into groups based on the values of the predictors. Each group is then assigned the most common class among the observations in that group, which can make it easier to see how different variables influence the predictions.
+
+We will fit a classification tree using 5-fold cross-validation and tune the complexity parameter to select the best model.
+
+
+
+```{r}
+cv_folds <- vfold_cv(diabetes_train, v = 5)
+```
+
+
+
+
+Now, that we have our CV fold, let's create a recipe with 5 predictors for our classification tree model and define model specifications.
+
+
+
+```{r tree recipe and spec}
+tree_recipe <- recipe(diabetes_binary ~ high_bp + phys_activity + age + income + education, data = diabetes_train) |> 
+  step_dummy(all_nominal_predictors())
+
+tree_mod <- decision_tree(tree_depth = tune(),
+                          min_n = 10,
+                          cost_complexity = tune()) |>
+  set_engine("rpart") |>
+  set_mode("classification")
+```
+
+
+
+
+Next, we will create our workflow.
+
+
+
+```{r Tree wkf}
+tree_wkf <- workflow() |>
+  add_recipe(tree_recipe) |>
+  add_model(tree_mod)
+tree_wkf
+```
+
+
+
+
+Then, we will fit the workflow to our CV folds.
+
+
+
+```{r Tree fit wkf to folds}
+set.seed(75)
+
+tree_grid <- grid_regular(cost_complexity(),
+                          tree_depth(),
+                          levels = c(5, 5))
+
+tree_fits <- tree_wkf |> 
+  tune_grid(resamples = cv_folds,
+            grid = tree_grid,
+            metrics = metric_set(mn_log_loss))
+tree_fits
+```
+
+
+
+
+Now that the model has been tuned, we can collect metrics to see how the models performed.
+
+
+
+```{r Tree metrics}
+tree_fits |>
+  collect_metrics() |>
+  filter(.metric == "mn_log_loss") |>
+  arrange(mean)
+
+best_tree <- tree_fits |> 
+  select_best(metric = "mn_log_loss")
+best_tree
+```
+
+
+
+
+Finally, we will finalize our workflow and fit it to the entire training data set.
+
+
+
+```{r Tree finalize & fit}
+tree_final <- tree_wkf |>
+  finalize_workflow(best_tree) |>
+  last_fit(diabetes_split, metrics = metric_set(mn_log_loss))
+
+tree_final |>
+  collect_metrics()
+```
+
+
+
+
+#### Random Forest
+
+A random forest model combines multiple classification trees to make predictions. This is a type of ensemble tree and can help improve prediction accuracy. Now, we will repeat the steps above in a similar way to create a random forest model.
+
+Let's create a recipe with 5 predictors for our random forest model and define model specifications.
+
+
+
+```{r RF recipe and spec}
+rf_recipe <- recipe(diabetes_binary ~ high_bp + phys_activity + age + income + education, data = diabetes_train) |> 
+  step_dummy(all_nominal_predictors())
+
+rf_mod <- rand_forest(mtry = tune(),
+                      trees = 200,
+                      min_n = 10) |>
+  set_engine("ranger", importance = "impurity") |> # Level for importance
+  set_mode("classification")
+
+# Workflow
+rf_wkf <- workflow() |>
+  add_recipe(rf_recipe) |>
+  add_model(rf_mod)
+rf_wkf
+```
+
+
+
+
+Next, we will move on to fitting the workflow to our CV folds and checking our metrics across the folds.
+
+
+
+```{r RF fit to folds & check metrics}
+set.seed(75)
+
+rf_fit <- rf_wkf |>
+  tune_grid(resamples = cv_folds,
+            grid = 5,
+            metrics = metric_set(mn_log_loss))
+
+# Collect metrics
+rf_fit |>
+  collect_metrics() |>
+  filter(.metric == "mn_log_loss") |>
+  arrange(mean)
+
+# Check metric performance
+best_rf <- rf_fit |> 
+  select_best(metric = "mn_log_loss")
+best_rf
+```
+
+
+
+
+Finally, we will finalize our workflow and fit it to the entire training data set.
+
+
+
+```{r RF finalize & fit}
+rf_final <- rf_wkf |>
+  finalize_workflow(best_rf) |>
+  last_fit(diabetes_split, metrics = metric_set(mn_log_loss))
+
+rf_final |>
+  collect_metrics()
+```
+
+
+
+
+#### Final Model Selection
+
+In this last section, we will compare the best models from our classification tree and random forest on the test set using log-loss. Below, we can see that both models perform very similar, but the classification tree model does slightly better.
+
+
+
+```{r}
+all_metrics <- rbind(
+  tree_final |>
+    collect_metrics() |>
+    mutate(Model = "CLASSIFICATION_TREE", .before = ".metric"),
+  rf_final |>
+    collect_metrics() |>
+    mutate(Model = "RANDOM_FOREST", .before = ".metric")
+)
+
+all_metrics |>
+  filter(.metric == "mn_log_loss") |> 
+  arrange(.estimate)
+```
+
+
+
+
+
+
+
+[Click here for the EDA Page](EDA.html)
+
+
