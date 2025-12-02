@@ -1,0 +1,106 @@
+---
+title: "Exploratory Data Analysis"
+format: html
+editor: visual
+---
+
+```{r}
+#| warning: FALSE
+library(tidyverse)
+library(readr)
+library(janitor)
+```
+
+## ST 558: Final Project - Creating a Vignette
+### EDA
+
+#### About the Data
+
+The dataset we will be using throughout this project is the "diabetes _ binary _ health _ indicators _ BRFSS2015.csv" dataset, which is a cleaned dataset of 253,680 survey responses to the CDC's Behavioral Risk Factor Surveillance System (BRFSS2015) for the year of 2015. The survey collects responses from many Americans on health-related risk behaviors, chronic health conditions, and the use of preventative services. The target variable `Diabetes_binary` has 2 classes: 0 for no diabetes and 1 for diabetes/prediabetes. This dataset has 21 feature variables and is not balanced. The main predictor variables that we will be considering today are high blood pressure, physical activity, age, and income.
+
+We will begin by using a relative path to import the data set. Then, we will observe the current structure of the data and check for any missing values.
+```{r}
+diabetes_data <- read_csv("diabetes_binary_health_indicators_BRFSS2015.csv")
+head(diabetes_data)
+```
+
+```{r}
+# Check structure of data
+str(diabetes_data)
+
+# Check for missing values
+colSums(is.na(diabetes_data)) 
+```
+
+Since this data has already been cleaned, there are no missing values present. However, by looking at the structure of our variables, we see that we will need to convert the majority of them to factors. We will leave `BMI`, `MentHlth`, and `PhysHlth` as numeric.
+```{r Factor Conversion}
+diabetes_data <- diabetes_data |>
+  mutate(Diabetes_binary = as.factor(Diabetes_binary),
+         HighBP = as.factor(HighBP),
+         HighChol = as.factor(HighChol),
+         CholCheck = as.factor(CholCheck),
+         Smoker = as.factor(Smoker),
+         Stroke = as.factor(Stroke),
+         HeartDiseaseorAttack = as.factor(HeartDiseaseorAttack),
+         PhysActivity = as.factor(PhysActivity),
+         Fruits = as.factor(Fruits),
+         Veggies = as.factor(Veggies),
+         HvyAlcoholConsump = as.factor(HvyAlcoholConsump),
+         AnyHealthcare = as.factor(AnyHealthcare),
+         NoDocbcCost = as.factor(NoDocbcCost),
+         GenHlth = as.factor(GenHlth),
+         DiffWalk = as.factor(DiffWalk),
+         Sex = as.factor(Sex),
+         Age = as.factor(Age),
+         Education = as.factor(Education),
+         Income = as.factor(Income))
+```
+
+For the last step of preparation, we will rename all the variables to have more user-friendly names.
+```{r}
+diabetes_data <- diabetes_data |>
+  clean_names() # Replaces all spaces with '_' and makes all letters lowercase.
+
+names(diabetes_data)
+```
+
+#### Summarizations
+
+In this section, we will explore the diabetes dataset by creating several summarizations to better understand the distribution of some important health indicators and how they relate to the response variable, `diabetes_binary`. The main predictors we will be focusing on are `high_bp`, `phys_activity`, `age`, and `income`. As mentioned in the beginning, this dataset is not balanced. But how do we know that? Below we will break down the responses of diabetic and non-diabetic individuals.
+```{r}
+table(diabetes_data$diabetes_binary)
+```
+
+```{r}
+ggplot(diabetes_data, aes(x = diabetes_binary)) +
+  geom_bar(fill = "orange") +
+  labs(title = "Distribution of Diabetes Status",
+       x = "Diabetes/Prediabetes (0 = No, 1 = Yes)",
+       y = "Count")
+```
+We can see that there are many more observations that reflect individuals who do not have diabetes than those who do. This imbalance may affect how a model performs on the data, but we will discuss that later on.
+
+Let's see how high blood pressure status compares to diabetic status. Below, we can see that individuals with high blood pressure show a much higher proportion of having diabetes than those with out high blood pressure. This can give a good indication that the `high_bp` variable will play a key role in predicting diabetic status.
+```{r BP}
+table("High BP" = diabetes_data$high_bp, "Diabetes Status" = diabetes_data$diabetes_binary)
+```
+
+Let's check out a bar plot comparing age groups by diabetes status. We see a similar trend between these two variables. In this dataset, most non-diabetic individuals fall within age groups 6–11 (ages 45–74), and most diabetic individuals fall within age groups 8–11 (ages 55–74), suggesting that diabetes becomes more common in the later middle-aged to early seniors. The plot clearly shows an upward trend in diabetes risk with age, especially staring around age group 8 (55-59 years).
+```{r Age plot}
+ggplot(diabetes_data, 
+       aes(x = age, fill = diabetes_binary)) +
+  geom_bar(position = "dodge") +
+  labs(title = "Counts of Age Levels by Diabetes Status",
+       x = "Age Category",
+       y = "Count")
+```
+
+Finally, let's look into an individuals physical activity vs diabetic status. The contingency table below shows that individuals who did not engage in physical activity in past 30 days (not including job) have a higher proportion of diabetes compared to those who are active. We can see that there is a much larger difference between the number of individuals with and without diabetes when looking at those who are active..
+```{r}
+table("Phys Activity" = diabetes_data$phys_activity, "Diabetes Status" = diabetes_data$diabetes_binary)
+```
+
+
+[Click here for the Modeling Page](Modeling.html)
+
+
