@@ -3,8 +3,8 @@ project:
   output-dir: docs
   render: 
     - index.qmd
-    - pages/EDA.qmd
-    - pages/Modeling.qmd
+    - EDA.qmd
+    - Modeling.qmd
     
 website:
   title: "Final Project Site"
@@ -19,8 +19,8 @@ website:
     collapse-level: 1
     contents:
       - index.qmd
-      - pages/EDA.qmd
-      - pages/Modeling.qmd
+      - EDA.qmd
+      - Modeling.qmd
   page-navigation: true
   reader-mode: true
 
